@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <script src="config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>我的可愛氣象</title>
@@ -11,14 +10,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="./icon.png">
     <link rel="apple-touch-icon" href="./icon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="./icon.png">
-
+    
     <style>
         :root {
-            --bg-color: #FFF9F0; /* 溫暖的米色底 */
+            --bg-color: #FFF9F0;
             --card-bg: #FFFFFF;
             --text-main: #4A4A4A;
-            --accent: #FF9F43; /* 溫暖橘 */
+            --accent: #FF9F43;
             --rain-color: #54A0FF;
         }
 
@@ -35,7 +33,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 可愛風格容器 */
         .weather-card {
             background: var(--card-bg);
             border-radius: 24px;
@@ -49,15 +46,14 @@
         }
 
         h1 { font-size: 1.2rem; margin-bottom: 5px; color: #888; font-weight: normal;}
-        .location { font-size: 2rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main); }
+        .location { font-size: 2rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main); min-height: 2.4rem; }
         
         .main-icon { width: 120px; height: 120px; margin: 10px auto; }
         
         .temp-section { margin: 20px 0; }
         .temp { font-size: 3.5rem; font-weight: 800; color: var(--text-main); letter-spacing: -2px; }
-        .desc { font-size: 1.2rem; color: #666; margin-top: 5px; }
+        .desc { font-size: 1.2rem; color: #666; margin-top: 5px; min-height: 1.5rem;}
 
-        /* 建議區塊 (你的核心需求) */
         .advice-box {
             background: #F0F3F6;
             border-radius: 16px;
@@ -72,9 +68,8 @@
         .highlight { color: var(--rain-color); font-weight: bold; }
         .warm { color: var(--accent); font-weight: bold; }
 
-        /* 下拉選單 */
         select {
-            padding: 10px;
+            padding: 12px;
             border-radius: 12px;
             border: 1px solid #ddd;
             font-size: 1rem;
@@ -82,11 +77,12 @@
             margin-top: 20px;
             width: 100%;
             max-width: 200px;
+            text-align: center;
+            appearance: none; /* 讓它在手機上更好看 */
         }
 
         .loading { opacity: 0.5; pointer-events: none; }
         
-        /* 未來預報簡化版 */
         .forecast-row {
             display: flex;
             justify-content: space-between;
@@ -94,8 +90,16 @@
             border-top: 1px solid #eee;
             padding-top: 20px;
         }
-        .forecast-item { text-align: center; font-size: 0.9rem; }
+        .forecast-item { text-align: center; font-size: 0.9rem; width: 33%; }
         .f-time { color: #999; margin-bottom: 5px; font-size: 0.8rem; }
+        
+        /* 錯誤訊息樣式 */
+        .error-msg {
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -104,16 +108,10 @@
         <h1>現在位置</h1>
         <div class="location" id="locationDisplay">載入中...</div>
         
-        <!-- 這是一個純 CSS/SVG 的可愛太陽/雲圖示，不需要外部圖片 -->
         <div id="weatherIconContainer">
+            <!-- 預設顯示載入中圖示 -->
             <svg class="main-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="30" fill="#FFD93D" />
-                <g id="rays">
-                    <line x1="50" y1="10" x2="50" y2="5" stroke="#FFD93D" stroke-width="6" stroke-linecap="round"/>
-                    <line x1="50" y1="90" x2="50" y2="95" stroke="#FFD93D" stroke-width="6" stroke-linecap="round"/>
-                    <line x1="10" y1="50" x2="5" y2="50" stroke="#FFD93D" stroke-width="6" stroke-linecap="round"/>
-                    <line x1="90" y1="50" x2="95" y2="50" stroke="#FFD93D" stroke-width="6" stroke-linecap="round"/>
-                </g>
+                <circle cx="50" cy="50" r="30" fill="#eee" />
             </svg>
         </div>
 
@@ -122,179 +120,195 @@
             <div class="desc" id="desc">正在抓取資料...</div>
         </div>
 
-        <!-- 核心：穿衣與帶傘建議 -->
         <div class="advice-box">
             <div class="advice-item">
                 <span class="advice-icon">🌂</span>
-                <div class="advice-text" id="rainAdvice">讀取降雨機率中...</div>
+                <div class="advice-text" id="rainAdvice">讀取中...</div>
             </div>
             <div class="advice-item">
                 <span class="advice-icon">👕</span>
-                <div class="advice-text" id="clothAdvice">讀取氣溫建議中...</div>
+                <div class="advice-text" id="clothAdvice">讀取中...</div>
             </div>
         </div>
 
+        <!-- 錯誤訊息顯示區 -->
+        <div id="errorMsg" class="error-msg"></div>
+
         <div class="forecast-row" id="forecast">
-            <!-- 未來預報會插入這裡 -->
+            <!-- 預報區塊會自動插入 -->
         </div>
     </div>
 
-    <select id="citySelect" onchange="manualSelectCity()">
-        <option value="" disabled selected>手動選擇縣市</option>
-        <!-- JS 會自動填入選項 -->
+    <!-- 下拉選單 -->
+    <select id="citySelect">
+        <option value="" disabled selected>📍 手動選擇縣市</option>
     </select>
 
     <script>
         // ================= 設定區 =================
-        const API_KEY = "CWA-7789A37A-97C4-4BA9-9777-90C7E8741D62";
+        // ⚠️ 請在這裡填入你的 API KEY
+        const API_KEY = 'CWA-7789A37A-97C4-4BA9-9777-90C7E8741D62'; 
         const API_URL = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${API_KEY}&format=JSON`;
 
-        const cities = ["臺北市", "新北市", "桃園市", "臺中市", "臺南市", "高雄市", "基隆市", "新竹縣", "新竹市", "苗栗縣", "彰化縣", "南投縣", "雲林縣", "嘉義縣", "嘉義市", "屏東縣", "宜蘭縣", "花蓮縣", "臺東縣", "澎湖縣", "金門縣", "連江縣"];
+        // 完整的縣市列表
+        const cities = ["臺北市", "新北市", "基隆市", "桃園市", "新竹市", "新竹縣", "苗栗縣", "臺中市", "彰化縣", "南投縣", "雲林縣", "嘉義市", "嘉義縣", "臺南市", "高雄市", "屏東縣", "宜蘭縣", "花蓮縣", "臺東縣", "澎湖縣", "金門縣", "連江縣"];
 
-        // 初始化下拉選單
-        const select = document.getElementById('citySelect');
-        cities.forEach(city => {
-            let option = document.createElement('option');
-            option.value = city;
-            option.text = city;
-            select.appendChild(option);
-        });
+        // ================= 程式邏輯 =================
 
-        // ================= 核心邏輯 =================
+        // 1. 初始化選單
+        function initSelect() {
+            const select = document.getElementById('citySelect');
+            cities.forEach(city => {
+                let option = document.createElement('option');
+                option.value = city;
+                option.text = city;
+                select.appendChild(option);
+            });
 
-        async function init() {
-            // 預設先抓台北，隨後嘗試定位
-            fetchWeather("新北市"); 
-            
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    // 這裡為了簡化 MVP，我們直接用 API 回傳的縣市清單讓使用者選，
-                    // 或是如果你想更精確，需要反向地理編碼 (Reverse Geocoding)。
-                    // 為保持簡單，我們預設會提示使用者確認位置。
-                    console.log("取得座標:", position.coords);
-                    // 實際專案可接 Google Maps API 轉縣市，這邊先保留手動功能
-                });
-            }
+            // 監聽選單變更
+            select.addEventListener('change', (e) => {
+                fetchWeather(e.target.value);
+            });
         }
 
+        // 2. 抓取天氣資料
         async function fetchWeather(locationName) {
-            document.getElementById('card').classList.add('loading');
+            const card = document.getElementById('card');
+            const errorMsg = document.getElementById('errorMsg');
+            
+            card.classList.add('loading');
+            errorMsg.style.display = 'none'; // 清除舊錯誤
+
             try {
+                // 檢查 API Key 是否還沒填
+                if (API_KEY.includes('你的_API_KEY')) {
+                    throw new Error("請先在程式碼中填入正確的 API Key 喔！");
+                }
+
                 const url = `${API_URL}&locationName=${locationName}`;
+                console.log("正在抓取:", locationName); // 除錯用
+
                 const response = await fetch(url);
+                if (!response.ok) throw new Error("連線失敗，請檢查網路或 Key");
+                
                 const data = await response.json();
                 
                 if (data.success === "true") {
                     const records = data.records.location[0];
+                    if (!records) throw new Error("找不到這個地區的資料");
                     renderUI(records);
+                } else {
+                    throw new Error("氣象署 API 回傳錯誤");
                 }
+
             } catch (error) {
-                alert("天氣資料抓取失敗，請檢查 API Key 或網路");
                 console.error(error);
+                document.getElementById('desc').innerText = "讀取失敗";
+                errorMsg.innerText = error.message;
+                errorMsg.style.display = 'block';
             } finally {
-                document.getElementById('card').classList.remove('loading');
+                card.classList.remove('loading');
             }
         }
 
+        // 3. 渲染畫面
         function renderUI(data) {
             document.getElementById('locationDisplay').innerText = data.locationName;
 
-            // 解析 CWA 資料結構 (Wx:天氣, PoP:降雨, MinT:低溫, CI:舒適度, MaxT:高溫)
+            // 整理資料結構方便讀取
             const weatherElements = {};
             data.weatherElement.forEach(el => {
+                // 這裡我們把 "time" 陣列存起來
                 weatherElements[el.elementName] = el.time;
-            });Reload Window
+            });
 
-            // 取得最近的一個時段 (今晚或明天白天)
-            const now = weatherElements['Wx'][0];
-            const wx = now.parameter.parameterName;
-            const pop = weatherElements['PoP'][0].parameter.parameterName; // 降雨機率 %
-            const minT = weatherElements['MinT'][0].parameter.parameterName;
-            const maxT = weatherElements['MaxT'][0].parameter.parameterName;
-            const ci = weatherElements['CI'][0].parameter.parameterName; // 舒適度描述
+            // === 取得「最近」的一個時段 (index 0) ===
+            const nowData = {
+                wx: weatherElements['Wx'][0].parameter.parameterName,
+                pop: weatherElements['PoP'][0].parameter.parameterName,
+                minT: weatherElements['MinT'][0].parameter.parameterName,
+                maxT: weatherElements['MaxT'][0].parameter.parameterName,
+                ci: weatherElements['CI'][0].parameter.parameterName
+            };
 
-            // 1. 更新主畫面
-            document.getElementById('temp').innerText = `${minT}-${maxT}°`;
-            document.getElementById('desc').innerText = `${wx} | 降雨機率 ${pop}%`;
+            // 更新畫面主區塊
+            document.getElementById('temp').innerText = `${nowData.minT}-${nowData.maxT}°`;
+            document.getElementById('desc').innerText = `${nowData.wx} | 降雨 ${nowData.pop}%`;
 
-            // 2. 產生建議 (你的核心需求)
-            generateAdvice(pop, parseInt(minT), parseInt(maxT), ci);
+            // 產生穿衣與帶傘建議
+            generateAdvice(nowData.pop, parseInt(nowData.minT), parseInt(nowData.maxT), nowData.ci);
 
-            // 3. 更新 Icon (簡單判斷)
-            updateIcon(wx, pop);
+            // 更新 Icon
+            updateIcon(nowData.wx, nowData.pop);
 
-            // 4. 未來預測 (Next 12-24hr)
-            const next = weatherElements['Wx'][1];
-            const nextTime = new Date(next.startTime).getHours();
-            const timeLabel = nextTime >= 18 ? "今晚明晨" : "明天白天";
+            // === 更新下方預報 (顯示未來兩個時段: index 1 和 2) ===
+            // 氣象署 API 通常會給 3 個時段 (每12小時一格)
+            let forecastHtml = '';
             
-            document.getElementById('forecast').innerHTML = `
-                <div class="forecast-item">
-                    <div class="f-time">${timeLabel}</div>
-                    <div>${next.parameter.parameterName}</div>
-                    <div>${weatherElements['MinT'][1].parameter.parameterName}-${weatherElements['MaxT'][1].parameter.parameterName}°</div>
-                </div>
-                <div class="forecast-item">
-                    <div class="f-time">降雨機率</div>
-                    <div style="font-weight:bold; color:#54A0FF">${weatherElements['PoP'][1].parameter.parameterName}%</div>
-                </div>
-            `;
+            // 拿出 index 1 和 index 2 的資料來顯示
+            for(let i = 1; i <= 2; i++) {
+                if(weatherElements['Wx'][i]) {
+                    const startTime = new Date(weatherElements['Wx'][i].startTime);
+                    const hour = startTime.getHours();
+                    // 判斷是早上還是晚上
+                    const timeLabel = (hour >= 18 || hour < 6) ? "今晚/明晚" : "明日白天";
+                    
+                    forecastHtml += `
+                        <div class="forecast-item">
+                            <div class="f-time">${timeLabel}</div>
+                            <div style="margin:2px 0;">${weatherElements['Wx'][i].parameter.parameterName}</div>
+                            <div>${weatherElements['MinT'][i].parameter.parameterName}-${weatherElements['MaxT'][i].parameter.parameterName}°</div>
+                        </div>
+                    `;
+                }
+            }
+            document.getElementById('forecast').innerHTML = forecastHtml;
         }
 
+        // 4. 建議邏輯
         function generateAdvice(pop, minT, maxT, ci) {
+            const popVal = parseInt(pop);
+            
             // 傘的建議
-            let rainText = "";
-            if (parseInt(pop) >= 50) {
-                rainText = "<span class='highlight'>一定要帶傘！</span> 下雨機率很高，別淋濕了。";
-            } else if (parseInt(pop) >= 30) {
-                rainText = "建議帶把傘，天氣不太穩定喔。";
-            } else {
-                rainText = "應該不用帶傘，享受好天氣！";
-            }
+            let rainText = popVal >= 50 ? "<span class='highlight'>一定要帶傘！</span> 下雨機率高。" :
+                           popVal >= 30 ? "帶把傘比較保險喔。" :
+                           "不用帶傘，盡情享受！";
             document.getElementById('rainAdvice').innerHTML = rainText;
 
-            // 衣服建議 (這裡你可以依據自己的體感調整)
-            let clothText = "";
+            // 衣服建議
             const avgTemp = (minT + maxT) / 2;
-
-            if (avgTemp < 15) {
-                clothText = "<b>很冷喔！</b> 請穿著厚外套、發熱衣，注意保暖。";
-            } else if (avgTemp < 20) {
-                clothText = "有點涼，建議洋蔥式穿搭，帶件<b>薄外套</b>出門。";
-            } else if (avgTemp < 26) {
-                clothText = "<b>舒適！</b> 短袖搭配薄襯衫或長袖T恤剛好。";
-            } else {
-                clothText = "<span class='warm'>很熱！</span> 短袖短褲即可，注意防曬與補水。";
-            }
+            let clothText = "";
+            if (avgTemp < 15) clothText = "<b>很冷！</b> 厚外套、發熱衣穿起來。";
+            else if (avgTemp < 20) clothText = "有點涼，洋蔥式穿搭，帶件<b>薄外套</b>。";
+            else if (avgTemp < 26) clothText = "<b>舒適！</b> 短袖配薄長袖剛好。";
+            else clothText = "<span class='warm'>很熱！</span> 短袖短褲，注意防曬。";
+            
             document.getElementById('clothAdvice').innerHTML = clothText;
         }
 
+        // 5. Icon 切換邏輯 (可愛 SVG)
         function updateIcon(wx, pop) {
-            // 簡單的圖示切換邏輯
-            // 這裡可以用更複雜的 SVG 替換，MVP 先示範邏輯
             const container = document.getElementById('weatherIconContainer');
-            if (wx.includes("雨") || parseInt(pop) > 50) {
-                // 換成雨天 SVG (用 JS 畫)
-                container.innerHTML = `<svg class="main-icon" viewBox="0 0 100 100"><path d="M30,50 Q40,35 55,35 T80,50 A20,20 0 0,1 80,80 A20,20 0 0,1 40,80 A15,15 0 0,1 30,50" fill="#ddd"/><line x1="45" y1="85" x2="40" y2="95" stroke="#54A0FF" stroke-width="3"/><line x1="60" y1="85" x2="55" y2="95" stroke="#54A0FF" stroke-width="3"/></svg>`;
-            } else if (wx.includes("雲") || wx.includes("陰")) {
+            let svgContent = '';
+
+            if (wx.includes("雨") || parseInt(pop) > 40) {
+                // 雨天
+                svgContent = `<svg class="main-icon" viewBox="0 0 100 100"><path d="M30,50 Q40,35 55,35 T80,50 A20,20 0 0,1 80,80 A20,20 0 0,1 40,80 A15,15 0 0,1 30,50" fill="#ddd"/><line x1="45" y1="85" x2="40" y2="95" stroke="#54A0FF" stroke-width="3"/><line x1="60" y1="85" x2="55" y2="95" stroke="#54A0FF" stroke-width="3"/><line x1="75" y1="85" x2="70" y2="95" stroke="#54A0FF" stroke-width="3"/></svg>`;
+            } else if (wx.includes("陰") || wx.includes("雲")) {
                 // 陰天
-                container.innerHTML = `<svg class="main-icon" viewBox="0 0 100 100"><path d="M30,50 Q40,35 55,35 T80,50 A20,20 0 0,1 80,80 A20,20 0 0,1 40,80 A15,15 0 0,1 30,50" fill="#dcdcdc"/></svg>`;
+                svgContent = `<svg class="main-icon" viewBox="0 0 100 100"><path d="M30,50 Q40,35 55,35 T80,50 A20,20 0 0,1 80,80 A20,20 0 0,1 40,80 A15,15 0 0,1 30,50" fill="#ccc"/><circle cx="65" cy="40" r="15" fill="#FFD93D" style="z-index:-1"/></svg>`;
             } else {
-                // 晴天 (預設)
-                container.innerHTML = `<svg class="main-icon" viewBox="0 0 100 100"><circle cx="50" cy="50" r="25" fill="#FFD93D" /><g stroke="#FFD93D" stroke-width="5"><line x1="50" y1="10" x2="50" y2="15"/><line x1="50" y1="85" x2="50" y2="90"/><line x1="10" y1="50" x2="15" y2="50"/><line x1="85" y1="50" x2="90" y2="50"/></g></svg>`;
+                // 晴天
+                svgContent = `<svg class="main-icon" viewBox="0 0 100 100"><circle cx="50" cy="50" r="28" fill="#FFD93D" /><g stroke="#FFD93D" stroke-width="6" stroke-linecap="round"><line x1="50" y1="10" x2="50" y2="5"/><line x1="50" y1="90" x2="50" y2="95"/><line x1="10" y1="50" x2="5" y2="50"/><line x1="90" y1="50" x2="95" y2="50"/><line x1="22" y1="22" x2="18" y2="18"/><line x1="78" y1="78" x2="82" y2="82"/><line x1="22" y1="78" x2="18" y2="82"/><line x1="78" y1="22" x2="82" y2="18"/></g></svg>`;
             }
+            container.innerHTML = svgContent;
         }
 
-        function manualSelectCity() {
-            const city = document.getElementById('citySelect').value;
-            fetchWeather(city);
-        }
+        // 啟動程式
+        initSelect();
+        // 預設先抓新北市
+        fetchWeather("新北市");
 
-        // 啟動
-        init();
     </script>
 </body>
 </html>
-git status
-git add .
-git commit -m "Save local changes before moving to new repo"
